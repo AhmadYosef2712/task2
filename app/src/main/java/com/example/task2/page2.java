@@ -1,6 +1,10 @@
 package com.example.task2;
+import static androidx.core.app.ActivityCompat.startActivityForResult;
 
+import android.Manifest;
+import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.provider.MediaStore;
@@ -10,9 +14,13 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import android.net.Uri;
+import android.widget.Toast;
 
 public class  page2 extends AppCompatActivity implements View.OnClickListener {
-    private static final int REQUEST_IMAGE_CAPTURE =1 ;
+    private static final int REQUEST_IMAGE_CAPTURE =100 ;
     private Button b, c;
     private ImageView imageView;
 
@@ -44,18 +52,40 @@ public class  page2 extends AppCompatActivity implements View.OnClickListener {
             finish();
         }
         if (view.getId() == R.id.pic) {
-            Intent intent2 = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-            startActivityForResult(intent2, REQUEST_IMAGE_CAPTURE);
+            if (ContextCompat.checkSelfPermission(page2.this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(page2.this, new String[]{Manifest.permission.CAMERA}, REQUEST_IMAGE_CAPTURE);
+            } else {
+                openCamera();
+            }
+        }
+}
+
+private void openCamera() {
+    Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+    startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
+}
+
+
+    @Override
+public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+    if (requestCode == REQUEST_IMAGE_CAPTURE) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            openCamera();
+        } else {
+            Toast.makeText(this, "Camera permission is required to change the picture.", Toast.LENGTH_SHORT).show();
         }
     }
+}
 
-    protected void onActivityResult(int requestCode, int resultCode, Intent data){
-        super.onActivityResult(requestCode, resultCode, data);
-        if(requestCode ==REQUEST_IMAGE_CAPTURE &&resultCode ==RESULT_OK)
-    {
-        Bundle extras = data.getExtras();
-        Bitmap imageBitmap = (Bitmap) extras.get("data");
-        imageView.setImageBitmap(imageBitmap);
+@Override
+protected void onActivityResult(int requestCode, int resultCode,  Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+
+    if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+        assert data != null;
+        imageView.setImageBitmap((android.graphics.Bitmap) data.getExtras().get("data"));
     }
 }
-    }
+}
